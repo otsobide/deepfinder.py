@@ -3,7 +3,7 @@
 import builtins
 import unittest
 import warnings
-from typing import Any, cast
+from typing import cast
 
 from deepfinder import deep_find
 from deepfinder.entity import DeepFinderDict, DeepFinderList, nativify
@@ -63,7 +63,7 @@ class TestNativify(unittest.TestCase):
         Expected: list([{'name': 'pikachu'}]).deep_find('0.name') -> 'pikachu'
         """
         self._nativify_quietly()
-        built = cast('DeepFinderList[Any]', builtins.list([{'name': 'pikachu'}]))
+        built = cast('DeepFinderList[object]', builtins.list([{'name': 'pikachu'}]))
         self.assertEqual(built.deep_find('0.name'), 'pikachu')
 
     def test_plain_dictionaries_are_still_recognised(self) -> None:

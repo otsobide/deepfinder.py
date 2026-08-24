@@ -4,7 +4,7 @@ import pathlib
 import unittest
 
 import deepfinder
-from deepfinder import entity
+import deepfinder.entity
 
 
 class TestPublicApi(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestPublicApi(unittest.TestCase):
         Expected: 'nativify' not in deepfinder.__all__, but present on the submodule
         """
         self.assertNotIn('nativify', deepfinder.__all__)
-        self.assertIn('nativify', entity.__all__)
+        self.assertIn('nativify', deepfinder.entity.__all__)
 
     def test_version_is_declared(self) -> None:
         """
