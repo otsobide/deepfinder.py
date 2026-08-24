@@ -2,10 +2,11 @@
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/github/license/otsobide/deepfinder.py)](https://github.com/otsobide/deepfinder.py/blob/main/LICENSE)
+[![Tests](https://github.com/otsobide/deepfinder.py/actions/workflows/tests.yml/badge.svg)](https://github.com/otsobide/deepfinder.py/actions/workflows/tests.yml)
 [![Pypi](https://img.shields.io/pypi/v/deepfinder)](https://pypi.org/project/deepfinder/)
+[![Python](https://img.shields.io/pypi/pyversions/deepfinder)](https://pypi.org/project/deepfinder/)
 [![Downloads](https://pepy.tech/badge/deepfinder)](https://pepy.tech/project/deepfinder)
-[![GA](https://github.com/otsobide/deepfinder.py/workflows/Tests/badge.svg)](https://github.com/otsobide/deepfinder.py/actions/workflows/tests.yml)
+[![License](https://img.shields.io/github/license/otsobide/deepfinder.py)](https://github.com/otsobide/deepfinder.py/blob/main/LICENSE)
 
 </div>
 
@@ -278,10 +279,17 @@ python -m unittest tests.unit.deep_find_in_lists_test
 python -m unittest tests.unit.deep_find_in_lists_test.TestFindInLists.test_all_values_of_list
 ```
 
+## Changelog
+
+Release notes live in
+[CHANGELOG.md](https://github.com/otsobide/deepfinder.py/blob/main/CHANGELOG.md).
+
 ## Contributing
 
 Contributions are welcome. Please keep the suite green and the coverage at 100%,
 and add a test that fails before your fix and passes after it.
+[CONTRIBUTING.md](https://github.com/otsobide/deepfinder.py/blob/main/CONTRIBUTING.md)
+has the ground rules and the release procedure.
 
 ## License
 
