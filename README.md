@@ -2,10 +2,10 @@
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/github/license/n1nj4t4nuk1/deepfinder.py)](https://github.com/n1nj4t4nuk1/deepfinder.py/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/github/license/otsobide/deepfinder.py)](https://github.com/otsobide/deepfinder.py/blob/main/LICENSE)
 [![Pypi](https://img.shields.io/pypi/v/deepfinder)](https://pypi.org/project/deepfinder/)
 [![Downloads](https://pepy.tech/badge/deepfinder)](https://pepy.tech/project/deepfinder)
-[![GA](https://github.com/n1nj4t4nuk1/deepfinder.py/workflows/Tests/badge.svg)](https://github.com/n1nj4t4nuk1/deepfinder.py/actions/workflows/test.yml)
+[![GA](https://github.com/otsobide/deepfinder.py/workflows/Tests/badge.svg)](https://github.com/otsobide/deepfinder.py/actions/workflows/tests.yml)
 
 </div>
 
@@ -202,19 +202,7 @@ print(result)  # Output: 'superball'
 
 ## Contributing
 
-Contributions are welcome! Feel free to submit a Pull Request. But **Make sure you are not contributing to a mirror repository.** Check the following [Repository Status](#-repository-status) section to identify the primary repository.
-
-### 🔄 Repository Status
-
-This project **may be a *mirror*** of another primary repository. Below is a list of all related repositories, indicating whether they are mirrors and their approximate sync frequency:
-
-| Service  | Repository URL                                              | Type      | Sync Frequency        |
-|----------|-------------------------------------------------------------|-----------|-----------------------|
-| Codeberg | `https://codeberg.org/n1nj4t4nuk1/deepfinder.py`            | Primary   | N/A                   |
-| Github   | `https://github.com/n1nj4t4nuk1/deepfinder.py`              | Mirror    | Every commit          |
-
-> ⚠️ Note: If you are viewing this repository on a platform like GitHub, GitLab, Gitea, Forgejo, etc., be aware that it **might not be the main repository**.
-
+Contributions are welcome! Feel free to submit a Pull Request.
 
 ## License
 
