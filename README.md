@@ -37,11 +37,65 @@ can drift away from what the code actually does.
 - **Never raises** on a lookup: a miss yields `default`
 - **Container subclasses** that carry the method with them
 
+## Why use it?
+
+Reading one optional field out of a real API response is mostly defensive
+plumbing. Say you want every non-empty email in a paginated payload:
+
+```python
+>>> response = {
+...     'data': {
+...         'users': [
+...             {'profile': {'contact': {'email': 'ash@pallet.town'}}},
+...             {'profile': {'contact': {}}},
+...             {'profile': {'contact': {'email': 'misty@cerulean.city'}}},
+...         ],
+...     },
+... }
+
+```
+
+By hand, every level needs a guard, because any of them can be missing:
+
+```python
+>>> emails = []
+>>> for user in response.get('data', {}).get('users', []):
+...     email = user.get('profile', {}).get('contact', {}).get('email')
+...     if email is not None:
+...         emails.append(email)
+>>> emails
+['ash@pallet.town', 'misty@cerulean.city']
+
+```
+
+The same thing as a path:
+
+```python
+>>> deep_find(response, 'data.users.*?.profile.contact.email')
+['ash@pallet.town', 'misty@cerulean.city']
+
+```
+
+## Contents
+
+- [Installation](#installation)
+- [Path syntax](#path-syntax)
+- [Quick start](#quick-start)
+- [API reference](#api-reference)
+- [Behaviour worth knowing](#behaviour-worth-knowing)
+- [Paths and untrusted input](#paths-and-untrusted-input)
+- [Deprecated: `nativify()`](#deprecated-nativify)
+- [Development](#development)
+- [Contributing](#contributing)
+
 ## Installation
 
 ```bash
 pip install deepfinder
 ```
+
+No dependencies, on any supported Python. The package ships a `py.typed` marker,
+so type checkers pick up its annotations with no stub package.
 
 ## Path syntax
 
@@ -190,6 +244,37 @@ Anything that is a `Mapping` resolves by key, not just `dict`:
 ```
 
 Both accept the same `path_token` and `default` arguments as `deep_find`.
+
+## API reference
+
+### `deep_find(obj, path, path_token='.', default=None)`
+
+| Argument | Default | What it does |
+| --- | --- | --- |
+| `obj` | — | The structure to search: a dictionary, any `Mapping`, any non-string iterable, or an object |
+| `path` | — | The path, e.g. `'users.0.name'`. An empty path returns `obj` unchanged |
+| `path_token` | `'.'` | The separator between segments. Any string, not only one character |
+| `default` | `None` | Returned whenever the path resolves to `None` |
+
+Returns the resolved value, or `default`.
+
+Raises `TypeError` if `path` is not a string and `ValueError` if `path_token` is
+empty. Nothing else: a path that cannot be resolved is a miss, not an error.
+
+### `DeepFinderDict.deep_find(path, path_token='.', default=None)`
+
+### `DeepFinderList.deep_find(path, path_token='.', default=None)`
+
+The same arguments and the same semantics, with the container itself as `obj`.
+Both classes are generic, so `DeepFinderList[int]` and `DeepFinderDict[str, int]`
+keep their element types through a type checker:
+
+```python
+>>> numbers: DeepFinderList[int] = DeepFinderList([1, 2, 3])
+>>> numbers.deep_find('-1')
+3
+
+```
 
 ## Behaviour worth knowing
 
