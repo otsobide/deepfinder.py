@@ -1,0 +1,6 @@
+# The wheel ships only the package; the sdist also carries what is needed to run
+# the suite from a source distribution, which is what downstream packagers do.
+include CHANGELOG.md
+include CONTRIBUTING.md
+include Makefile
+recursive-include tests *.py

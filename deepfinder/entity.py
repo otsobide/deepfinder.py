@@ -1,100 +1,133 @@
+"""Container subclasses that carry :func:`deep_find` as a method."""
+
+from __future__ import annotations
+
 import builtins
+import warnings
+from typing import Any, TypeVar
 
-from deepfinder import deep_find
+from deepfinder.deep_find import deep_find
+
+__all__ = ['DeepFinderDict', 'DeepFinderList', 'nativify']
+
+_T = TypeVar('_T')
+_K = TypeVar('_K')
+_V = TypeVar('_V')
 
 
-class DeepFinderList(list):
+class DeepFinderList(list[_T]):
     """
     A list subclass that adds deep finding capabilities.
 
-    This class extends Python's built-in list type to add the ability to search
-    through nested structures using dot notation. It inherits all list functionality
-    while adding the deep_find method.
+    Extends the built-in list with :meth:`deep_find`, inheriting every other list
+    behaviour unchanged.
 
     Examples:
-        >>> pokemons = DeepFinderList([
-        ...     {'name': 'pikachu', 'type': 'electric'},
-        ...     {'name': 'charmander', 'type': 'fire'}
-        ... ])
+        >>> pokemons = DeepFinderList(
+        ...     [
+        ...         {'name': 'pikachu', 'type': 'electric'},
+        ...         {'name': 'charmander', 'type': 'fire'},
+        ...     ]
+        ... )
         >>> pokemons.deep_find('*.name')
         ['pikachu', 'charmander']
     """
 
-    def deep_find(self, path: str):
+    def deep_find(
+        self,
+        path: str,
+        path_token: str = '.',
+        default: Any = None,
+    ) -> Any:
         """
-        Find values in the list using dot notation.
+        Find a value in the list using dot notation.
 
         Args:
-            path: The path to search for using dot notation (e.g., '*.name').
+            path: The path to search for, e.g. ``'*.name'``.
+            path_token: The separator between path segments (default: ``'.'``).
+            default: Returned when the path resolves to ``None`` (default: ``None``).
 
         Returns:
-            The found value(s) or None if not found.
+            The found value, or ``default`` when the path resolves to ``None``.
 
         Examples:
-            >>> pokemons = DeepFinderList([{'name': 'pikachu'}])
-            >>> pokemons.deep_find('0.name')
+            >>> DeepFinderList([{'name': 'pikachu'}]).deep_find('0.name')
             'pikachu'
         """
-        return deep_find(self, path)
+        return deep_find(self, path, path_token, default)
 
 
-class DeepFinderDict(dict):
+class DeepFinderDict(dict[_K, _V]):
     """
     A dictionary subclass that adds deep finding capabilities.
 
-    This class extends Python's built-in dict type to add the ability to search
-    through nested structures using dot notation. It inherits all dictionary
-    functionality while adding the deep_find method.
+    Extends the built-in dict with :meth:`deep_find`, inheriting every other dict
+    behaviour unchanged.
 
     Examples:
-        >>> user = DeepFinderDict({
-        ...     'name': 'ash',
-        ...     'pokemons': [
-        ...         {'name': 'pikachu'},
-        ...         {'name': 'charmander'}
-        ...     ]
-        ... })
+        >>> user = DeepFinderDict(
+        ...     {
+        ...         'name': 'ash',
+        ...         'pokemons': [{'name': 'pikachu'}, {'name': 'charmander'}],
+        ...     }
+        ... )
         >>> user.deep_find('pokemons.*.name')
         ['pikachu', 'charmander']
     """
 
-    def deep_find(self, path: str):
+    def deep_find(
+        self,
+        path: str,
+        path_token: str = '.',
+        default: Any = None,
+    ) -> Any:
         """
-        Find values in the dictionary using dot notation.
+        Find a value in the dictionary using dot notation.
 
         Args:
-            path: The path to search for using dot notation (e.g., 'user.profile.name').
+            path: The path to search for, e.g. ``'user.profile.name'``.
+            path_token: The separator between path segments (default: ``'.'``).
+            default: Returned when the path resolves to ``None`` (default: ``None``).
 
         Returns:
-            The found value(s) or None if not found.
+            The found value, or ``default`` when the path resolves to ``None``.
 
         Examples:
-            >>> user = DeepFinderDict({'name': 'ash'})
-            >>> user.deep_find('name')
+            >>> DeepFinderDict({'name': 'ash'}).deep_find('name')
             'ash'
         """
-        return deep_find(self, path)
+        return deep_find(self, path, path_token, default)
 
 
-def nativify():
+def nativify() -> None:
     """
-    Replace Python's built-in list and dict types with DeepFinder versions.
+    Point ``builtins.list`` and ``builtins.dict`` at the DeepFinder subclasses.
 
-    This function modifies Python's builtins to replace the standard list and dict
-    types with DeepFinderList and DeepFinderDict respectively. This means all
-    lists and dictionaries created after calling this function will have deep
-    finding capabilities by default.
+    .. deprecated:: 1.6.0
+        Rebinding builtins affects every library in the process and does not do what
+        it looks like it does. Construct :class:`DeepFinderList` and
+        :class:`DeepFinderDict` explicitly, or just call :func:`deep_find`.
+
+    After this call, values built through the ``list(...)`` and ``dict(...)``
+    *constructors* gain a ``deep_find`` method.
 
     Warning:
-        This is a global change that affects the entire Python runtime.
-        Use with caution as it may affect other libraries that expect
-        standard list and dict behavior.
+        List and dict **literals** are unaffected. ``[1, 2]`` and ``{'a': 1}`` are
+        built by dedicated bytecode that never consults ``builtins``, so they remain
+        plain containers with no ``deep_find`` method. Only the constructor calls
+        change. This is a process-wide mutation that other libraries may not expect.
 
     Examples:
-        >>> nativify()
-        >>> my_list = [{'name': 'pikachu'}]
-        >>> my_list.deep_find('0.name')  # Now works on standard lists
+        >>> nativify()  # doctest: +SKIP
+        >>> list([{'name': 'pikachu'}]).deep_find('0.name')  # doctest: +SKIP
         'pikachu'
     """
-    builtins.list = DeepFinderList
-    builtins.dict = DeepFinderDict
+    warnings.warn(
+        'nativify() is deprecated and will be removed in a future release: it mutates '
+        'builtins process-wide and does not affect list/dict literals. Use '
+        'DeepFinderList/DeepFinderDict or deep_find() directly.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    builtins.list = DeepFinderList  # type: ignore[misc]
+    builtins.dict = DeepFinderDict  # type: ignore[misc]

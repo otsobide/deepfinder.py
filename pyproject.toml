@@ -1,6 +1,112 @@
 [build-system]
-requires = [
-    'setuptools',
-    'wheel'
+requires = ['setuptools>=77']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'deepfinder'
+description = "Search attributes easily using dot paths. Within structures of type dictionary, list and embedded substructures with simple format 'dict.users.0.name'."
+readme = 'README.md'
+requires-python = '>=3.9'
+license = 'MIT'
+license-files = ['LICENSE']
+authors = [{ name = 'Javier Parada', email = 'javierparada@pm.me' }]
+keywords = [
+    'array',
+    'deep',
+    'dictionary',
+    'find',
+    'get',
+    'list',
+    'nested',
+    'path',
+    'structure',
 ]
-# build-backend = 'setuptools.build_meta'
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Utilities',
+    'Typing :: Typed',
+]
+dynamic = ['version']
+
+[project.urls]
+Homepage = 'https://github.com/otsobide/deepfinder.py'
+Repository = 'https://github.com/otsobide/deepfinder.py'
+Issues = 'https://github.com/otsobide/deepfinder.py/issues'
+Changelog = 'https://github.com/otsobide/deepfinder.py/blob/main/CHANGELOG.md'
+
+[project.optional-dependencies]
+dev = ['build>=1.0', 'coverage>=7.0', 'mypy>=1.8', 'ruff>=0.6', 'twine>=5.0']
+
+[tool.setuptools]
+packages = ['deepfinder']
+
+[tool.setuptools.dynamic]
+version = { attr = 'deepfinder.__version__' }
+
+[tool.setuptools.package-data]
+deepfinder = ['py.typed']
+
+[tool.ruff]
+line-length = 100
+target-version = 'py39'
+
+[tool.ruff.lint]
+select = ['ALL']
+ignore = [
+    'ANN401',  # deep_find is genuinely heterogeneous: Any is the honest annotation.
+    'COM812',  # Trailing-comma rule that fights the formatter.
+    'CPY001',  # No per-file copyright headers; the LICENSE covers the project.
+    'D212',    # This codebase opens docstrings on the line below """ (D213 style).
+    'PT009',   # The suite is stdlib unittest on purpose; assertEqual is correct here.
+    'PT027',   # Same: assertRaises, not pytest.raises.
+    'S107',    # False positive: 'path_token' is a path separator, not a credential.
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = 'google'
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = 'single'
+
+[tool.ruff.lint.per-file-ignores]
+'tests/**' = [
+    'D101',  # Test classes are self-describing.
+    'D102',  # Every test method already carries a behavioural docstring.
+    'S101',  # assert is how a test asserts.
+    'S105',  # Fixture strings named SECRET are the subject of the test, not a leak.
+    'S106',  # Same, for path_token='' passed as an argument.
+    'SLF001',  # Tests reach into private helpers on purpose.
+]
+
+[tool.ruff.format]
+quote-style = 'single'
+docstring-code-format = true
+
+[tool.mypy]
+# No python_version pin: mypy >= 2.0 refuses anything below 3.10, while the package
+# still supports 3.9. Ruff's target-version = py39 is what guards 3.9 syntax.
+strict = true
+files = ['deepfinder', 'tests']
+pretty = true
+warn_unreachable = true
+
+[tool.coverage.run]
+branch = true
+source = ['deepfinder']
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
+exclude_lines = ['pragma: no cover', 'if TYPE_CHECKING:']

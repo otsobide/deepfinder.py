@@ -1,21 +1,53 @@
+name: Publish
+
 on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    name: Build and validate distributions
     runs-on: ubuntu-latest
     steps:
       - name: Clone and checkout branch
-        uses: actions/checkout@v1
-      - name: Build project
-        run: make
-      - name: Run tests
-        run: make test
-        
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install project
+        run: make install
+
+      - name: Check the tag matches the package version
+        run: |
+          tag='${{ github.event.release.tag_name }}'
+          version="$(python -c 'import deepfinder; print(deepfinder.__version__)')"
+          if [ "${tag#v}" != "$version" ]; then
+            echo "Release tag $tag does not match deepfinder.__version__ $version" >&2
+            exit 1
+          fi
+
+      - name: Lint, type check and test
+        run: make check
+
+      - name: Build distributions
+        run: make build
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+          if-no-files-found: error
+
   pypi-publish:
-    needs: build
     name: Upload release to PyPI
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -23,17 +55,11 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Set up Python version
-        uses: actions/setup-python@v2
+      - name: Download the distributions that were just tested
+        uses: actions/download-artifact@v4
         with:
-          python-version: '3.10'
-      - name: Clone and checkout branch
-        uses: actions/checkout@v1
-      - name: Install build and twine
-        run: pip install -U build twine
-      - name: Build package
-        run: python -m build
-      - name: Check binaries
-        run: twine check dist/*
+          name: distributions
+          path: dist/
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -11,37 +11,30 @@
 
 ## What is Deepfinder?
 
-Deepfinder is a Python library that makes it easy to access nested data in dictionaries, lists, and objects using simple dot notation. Instead of writing complex nested access code, you can use intuitive paths like `'users.0.name'` to get the data you need.
+Deepfinder reads values out of nested data using a dot path. Instead of a ladder of
+`if` statements and `.get()` calls, you write the shape of what you want:
 
-### Key Features
+```python
+>>> from deepfinder import deep_find
+>>> user = {'name': 'ash', 'links': {'pokehub': '@ash'}}
+>>> deep_find(user, 'links.pokehub')
+'@ash'
 
-- **Simple Dot Notation**: Access nested data using paths like `'user.profile.name'`
-- **List Support**: Access list items using indices like `'users.0.name'`
-- **Object Support**: Access class attributes and properties using dot notation
-- **Wildcard Search**: Use `*` to get all items in a list
-- **Smart Null Handling**: Use `?` to find first non-null value or `*?` for all non-null values
-- **Custom Classes**: Built-in support for dictionary, list, and object deep finding capabilities
+```
 
-### Path Syntax
+It has no dependencies, ships type hints, and supports Python 3.9+.
 
-Deepfinder uses a simple but powerful path syntax to navigate through your data:
+Every example in this file is executed as part of the test suite, so nothing here
+can drift away from what the code actually does.
 
-- `.` - Access dictionary keys, object attributes, or properties (e.g., `'user.name'`, `'person.address.city'`)
-- `0`, `1`, etc. - Access list items by index (e.g., `'users.0.name'`)
-- `*` - Get all items in a list (e.g., `'users.*.name'` returns all names)
-- `?` - Get first non-null value (e.g., `'users.?.email'` returns first non-null email)
-- `*?` - Get all non-null values (e.g., `'users.*?.email'` returns all non-null emails)
+### Key features
 
-### When to Use Deepfinder?
-
-Deepfinder is particularly useful when:
-- Working with complex nested JSON data
-- Accessing deeply nested configuration files
-- Processing API responses with multiple levels of nesting
-- Working with data structures that mix dictionaries and lists
-- Accessing nested object attributes and properties
-- Working with complex class hierarchies
-- You need to find specific values in complex data structures or objects
+- **Dot paths** into dictionaries, sequences and objects: `'user.profile.name'`
+- **Indexing**, including from the end: `'users.0.name'`, `'users.-1.name'`
+- **Fan-out** over sequences: `'users.*.name'`
+- **Null handling**: `'users.?.email'` for the first hit, `'users.*?.email'` for all of them
+- **Never raises** on a lookup: a miss yields `default`
+- **Container subclasses** that carry the method with them
 
 ## Installation
 
@@ -49,161 +42,247 @@ Deepfinder is particularly useful when:
 pip install deepfinder
 ```
 
-## Quick Start
+## Path syntax
 
-### Basic Dictionary Access
+| Segment | Meaning | Example |
+| --- | --- | --- |
+| `name` | Dictionary key, mapping key, or object attribute | `'user.name'` |
+| `0`, `-1` | Sequence index, negative counts from the end | `'users.0.name'` |
+| `*` | Every item, one result per item | `'users.*.name'` |
+| `?` | The first item that resolves to a non-`None` value | `'users.?.email'` |
+| `*?` | Every item that resolves to a non-`None` value (`?*` also works) | `'users.*?.email'` |
+
+The separator is configurable with `path_token`, which is also how you reach keys
+that contain a dot:
 
 ```python
-from deepfinder import deep_find
+>>> deep_find({'a.b': {'c': 1}}, 'a.b/c', path_token='/')
+1
 
-# Example data
-user = {
-    'name': 'ash',
-    'links': {
-        'pokehub': '@ash'
-    }
-}
-
-# Get the pokehub link
-result = deep_find(user, 'links.pokehub')
-print(result)  # Output: '@ash'
 ```
 
-### Working with Lists
+## Quick start
+
+### Dictionaries and lists
 
 ```python
-from deepfinder import deep_find
+>>> trainer = {
+...     'name': 'ash',
+...     'pokemons': [
+...         {'name': 'pikachu', 'type': 'electric'},
+...         {'name': 'charmander', 'type': 'fire'},
+...     ],
+... }
+>>> deep_find(trainer, 'pokemons.0.name')
+'pikachu'
+>>> deep_find(trainer, 'pokemons.-1.name')
+'charmander'
+>>> deep_find(trainer, 'pokemons.*.name')
+['pikachu', 'charmander']
 
-# Example data with a list of pokemon
-user = {
-    'name': 'ash',
-    'pokemons': [
-        {
-            'name': 'pikachu',
-            'type': 'electric'
-        },
-        {
-            'name': 'charmander',
-            'type': 'fire'
-        }
-    ]
-}
-
-# Get pikachu's name (first pokemon)
-result = deep_find(user, 'pokemons.0.name')
-print(result)  # Output: 'pikachu'
-
-# Get all pokemon names
-result = deep_find(user, 'pokemons.*.name')
-print(result)  # Output: ['pikachu', 'charmander']
 ```
 
-### Working with Objects
+### Missing values
+
+A lookup never raises. When it does not resolve, you get `default`:
 
 ```python
-from deepfinder import deep_find
+>>> deep_find(trainer, 'pokemons.99.name') is None
+True
+>>> deep_find(trainer, 'pokemons.99.name', default='unknown')
+'unknown'
 
-class Address:
-    def __init__(self, city, country):
-        self.city = city
-        self.country = country
-
-class User:
-    def __init__(self, name, address):
-        self.name = name
-        self.address = address
-
-# Create nested objects
-address = Address('Pallet Town', 'Kanto')
-user = User('Ash', address)
-
-# Access nested object attributes
-result = deep_find(user, 'address.city')
-print(result)  # Output: 'Pallet Town'
 ```
 
-### Finding First Non-Null Value
-
-Use `?` to get the first non-null value in a list:
+### First hit, and all the hits
 
 ```python
-user = {
-    'pokemons': [
-        {'name': 'pikachu'},  # no ball
-        {'name': 'charmander', 'ball': 'superball'},  # has ball
-        {'name': 'lucario', 'ball': 'ultraball'}  # has ball
-    ]
-}
+>>> squad = {
+...     'pokemons': [
+...         {'name': 'pikachu'},
+...         {'name': 'charmander', 'ball': 'superball'},
+...         {'name': 'lucario', 'ball': 'ultraball'},
+...     ],
+... }
+>>> deep_find(squad, 'pokemons.?.ball')
+'superball'
+>>> deep_find(squad, 'pokemons.*?.ball')
+['superball', 'ultraball']
 
-# Get the first pokemon that has a ball
-result = deep_find(user, 'pokemons.?.ball')
-print(result)  # Output: 'superball'
 ```
 
-### Finding All Non-Null Values
-
-Use `*?` to get all non-null values in a list:
+`*` keeps one slot per item, so it tells you *which* items missed:
 
 ```python
-user = {
-    'pokemons': [
-        {'name': 'pikachu'},  # no ball
-        {'name': 'charmander', 'ball': 'superball'},  # has ball
-        {'name': 'lucario', 'ball': 'ultraball'}  # has ball
-    ]
-}
+>>> deep_find(squad, 'pokemons.*.ball')
+[None, 'superball', 'ultraball']
 
-# Get all pokemon balls
-result = deep_find(user, 'pokemons.*?.ball')
-print(result)  # Output: ['superball', 'ultraball']
 ```
 
-## Using Custom Classes
+### Objects
 
-Deepfinder provides custom classes that make it even easier to work with nested data:
-
-### DeepFinderDict
+Instance attributes, `__slots__`, class attributes and properties all resolve:
 
 ```python
-from deepfinder.entity import DeepFinderDict
+>>> class Address:
+...     def __init__(self, city):
+...         self.city = city
+>>> class Trainer:
+...     region = 'Kanto'
+...     def __init__(self, name, address):
+...         self.name = name
+...         self.address = address
+...     @property
+...     def display_name(self):
+...         return self.name.title()
+>>> ash = Trainer('ash', Address('Pallet Town'))
+>>> deep_find(ash, 'address.city')
+'Pallet Town'
+>>> deep_find(ash, 'display_name')
+'Ash'
+>>> deep_find(ash, 'region')
+'Kanto'
 
-# Create a dictionary with built-in deep finding
-user = DeepFinderDict({
-    'name': 'ash',
-    'pokemons': [
-        {'name': 'pikachu'},
-        {'name': 'charmander', 'ball': 'superball'}
-    ]
-})
-
-# Use the deep_find method directly on the dictionary
-result = user.deep_find('pokemons.?.ball')
-print(result)  # Output: 'superball'
 ```
 
-### DeepFinderList
+Methods are not values, so a segment that collides with a method name misses rather
+than handing back a bound method:
 
 ```python
-from deepfinder.entity import DeepFinderList
+>>> deep_find(ash, 'display_name.upper', default='not found')
+'not found'
 
-# Create a list with built-in deep finding
-users = DeepFinderList([{
-    'name': 'ash',
-    'pokemons': [
-        {'name': 'pikachu'},
-        {'name': 'charmander', 'ball': 'superball'}
-    ]
-}])
+```
 
-# Use the deep_find method directly on the list
-result = users.deep_find('0.pokemons.?.ball')
-print(result)  # Output: 'superball'
+Named tuples resolve both ways:
+
+```python
+>>> from collections import namedtuple
+>>> Point = namedtuple('Point', ['x', 'y'])
+>>> deep_find({'p': Point(1, 2)}, 'p.y')
+2
+>>> deep_find({'p': Point(1, 2)}, 'p.0')
+1
+
+```
+
+### Mappings
+
+Anything that is a `Mapping` resolves by key, not just `dict`:
+
+```python
+>>> from collections import ChainMap
+>>> deep_find(ChainMap({'a': 1}, {'b': 2}), 'b')
+2
+
+```
+
+### Containers that carry the method
+
+```python
+>>> from deepfinder.entity import DeepFinderDict, DeepFinderList
+>>> DeepFinderDict(squad).deep_find('pokemons.?.ball')
+'superball'
+>>> DeepFinderList([squad]).deep_find('0.pokemons.*?.ball')
+['superball', 'ultraball']
+
+```
+
+Both accept the same `path_token` and `default` arguments as `deep_find`.
+
+## Behaviour worth knowing
+
+These are the sharp edges, all of them covered by tests.
+
+| Situation | Result | Why |
+| --- | --- | --- |
+| The stored value is `None` | `default` | A resolved `None` is indistinguishable from a miss |
+| `*` or `*?` with `default` set | `[...]`, never `default` | A list is never `None`, so substitution cannot fire |
+| Falsy values (`0`, `''`, `False`, `[]`) | returned as-is | Substitution keys off `None`, not truthiness |
+| A key containing the separator | miss | Use a different `path_token` |
+| Strings | not indexable | So a path never walks into single characters |
+| `bytes` / `bytearray` | indexed as integers | They are ordinary non-string iterables |
+| Methods | never resolve | So `'count'` or `'items'` yields `default`, not a truthy bound method |
+| Callables held as instance state | resolve | They are data the object is carrying |
+| Generators and iterators | advanced only as far as the index needs | The fan-out operators still read all of it |
+| Large sequences such as `range` | indexed in place, never copied | `deep_find(range(10 ** 10), '3')` is instant |
+| Sets and frozen sets | indexable, order not guaranteed | Materialised in iteration order |
+
+### Paths and untrusted input
+
+`deep_find` walks data, not the interpreter. Dunder segments never resolve, and
+attributes are never read off modules, functions, frames, tracebacks, coroutines or
+code objects, and methods do not resolve. A path therefore cannot pivot from your
+data into module globals or frame locals:
+
+```python
+>>> deep_find(ash, '__class__')  is None
+True
+>>> deep_find(ash, 'display_name.__globals__') is None
+True
+
+```
+
+That said, `deep_find` will happily return any value your own object graph exposes.
+If paths come from users, keep deciding for yourself which roots you hand it.
+
+### Argument validation
+
+Misuse of the API is loud, unlike a lookup that simply misses:
+
+```python
+>>> deep_find({'a': 1}, 1)
+Traceback (most recent call last):
+    ...
+TypeError: path must be a str, got int
+>>> deep_find({'a': 1}, 'a', path_token='')
+Traceback (most recent call last):
+    ...
+ValueError: path_token must not be empty
+
+```
+
+## Deprecated: `nativify()`
+
+`deepfinder.entity.nativify()` rebinds `builtins.list` and `builtins.dict` so that
+containers built through those *constructors* gain a `deep_find` method. It is
+deprecated as of 1.6.0: it mutates the interpreter for every library in the process,
+and it never affected list and dict **literals**, which are built by bytecode that
+does not consult `builtins`. Use `DeepFinderList` / `DeepFinderDict`, or just call
+`deep_find`.
+
+## Development
+
+```bash
+git clone https://github.com/otsobide/deepfinder.py
+cd deepfinder.py
+make install    # installs the package plus the dev extras
+make check      # lint, format check, type check, tests with coverage
+```
+
+Individual targets:
+
+```bash
+make lint       # ruff check
+make format     # ruff format
+make typecheck  # mypy --strict
+make test       # unittest
+make coverage   # unittest under coverage, fails under 100%
+make build      # sdist + wheel, validated with twine
+```
+
+To run one test module or a single test:
+
+```bash
+python -m unittest tests.unit.deep_find_in_lists_test
+python -m unittest tests.unit.deep_find_in_lists_test.TestFindInLists.test_all_values_of_list
 ```
 
 ## Contributing
 
-Contributions are welcome! Feel free to submit a Pull Request.
+Contributions are welcome. Please keep the suite green and the coverage at 100%,
+and add a test that fails before your fix and passes after it.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/otsobide/deepfinder.py/blob/main/LICENSE) file for details.
