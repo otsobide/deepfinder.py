@@ -62,5 +62,14 @@ jobs:
             - name: Install project
               run: make install
 
+            # Coverage is measured on CPython only. PyPy's tracing is not reliable
+            # enough for it -- the doctest suite installs its own trace function and
+            # coverage reports "Trace function changed, data is likely wrong", which
+            # trips the 100% gate on a measurement artefact rather than a real gap.
             - name: Run tests with coverage
+              if: ${{ !startsWith(matrix.python-version, 'pypy') }}
               run: make coverage
+
+            - name: Run tests
+              if: ${{ startsWith(matrix.python-version, 'pypy') }}
+              run: make test
