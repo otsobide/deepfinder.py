@@ -23,12 +23,15 @@ jobs:
       - name: Install project
         run: make install
 
+      # The tag arrives through the environment rather than through ${{ }}
+      # interpolation, which would splice attacker-controlled text into the shell.
       - name: Check the tag matches the package version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          tag='${{ github.event.release.tag_name }}'
           version="$(python -c 'import deepfinder; print(deepfinder.__version__)')"
-          if [ "${tag#v}" != "$version" ]; then
-            echo "Release tag $tag does not match deepfinder.__version__ $version" >&2
+          if [ "${TAG#v}" != "$version" ]; then
+            echo "Release tag $TAG does not match deepfinder.__version__ $version" >&2
             exit 1
           fi
 
