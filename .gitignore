@@ -210,3 +210,30 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+
+# AI coding assistants
+# Claude Code
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+# Cursor
+.cursor/
+.cursorrules
+.cursorignore
+# GitHub Copilot
+.github/copilot-instructions.md
+.github/instructions/
+# OpenAI Codex
+.codex/
+# Gemini CLI
+.gemini/
+GEMINI.md
+# Generic agent instructions
+AGENTS.md
+# Aider
+.aider*
+# Windsurf
+.windsurf/
+.windsurfrules
+# Continue
+.continue/
