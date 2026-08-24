@@ -36,7 +36,7 @@ jobs:
               run: make typecheck
 
     tests:
-        name: Python ${{ matrix.python-version }}
+        name: ${{ matrix.python-version }} on ${{ matrix.os }}
         needs: quality
         runs-on: ${{ matrix.os }}
         strategy:
@@ -55,7 +55,7 @@ jobs:
             - name: Clone and checkout branch
               uses: actions/checkout@v4
 
-            - name: Set up Python ${{ matrix.python-version }} in ${{ matrix.os }} OS.
+            - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v5
               with:
                   python-version: ${{ matrix.python-version }}
